@@ -1,0 +1,33 @@
+setwd("~/Project")
+library(MASS)
+library(randomForest)
+set.seed(10)
+DataFrame <- read.csv("RFTraining.csv", stringsAsFactors = T)
+DataFrame$Diabetic.Patient <-as.factor(DataFrame$Diabetic.Patient)
+DataFrame$X1.6 <-as.factor(DataFrame$X1.6)
+DataFrame$X1.7 <-as.factor(DataFrame$X1.7)
+DataFrame$X1.9 <-as.factor(DataFrame$X1.9)
+DataFrame$X2.1 <-as.factor(DataFrame$X2.1)
+DataFrame$X2.2 <-as.factor(DataFrame$X2.2)
+DataFrame$X2.5 <-as.factor(DataFrame$X2.5)
+DataFrame$X2.12 <-as.factor(DataFrame$X2.12)
+DataFrame$Sex <-as.factor(DataFrame$Sex)
+DataFrame$Age <-as.numeric(DataFrame$Age)
+library(caTools)
+ind<-sample.split(Y=DataFrame$Diabetic.Patient, SplitRatio = 0.7)
+trainDF <- DataFrame[ind,]
+testDF<- DataFrame[!ind,]
+modelRandom <- randomForest(Diabetic.Patient~.,data=trainDF,mtry=3,ntree=30)
+modelRandom
+importance(modelRandom)
+varImpPlot(modelRandom)
+PredictionsWithClass <- predict(modelRandom, testDF, type ='class')
+t<-table(predictions=PredictionsWithClass, actual=testDF$Diabetic.Patient)
+t
+sum(diag(t))/sum(t)
+library(pROC)
+PredictionsWithProbs <- predict(modelRandom, testDF, type = 'prob')
+auc<-auc(testDF$Diabetic.Patient, PredictionsWithProbs[,2])
+auc
+plot(roc(testDF$Diabetic.Patient, PredictionsWithProbs[,2]), main = "Random Forest ROC Curve", ylab = "Recall", xlab = "False Positve Rate", col="dark blue", lty=1)
+saveRDS(modelRandom, file = "modelRandom.rds")
